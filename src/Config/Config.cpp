@@ -389,6 +389,13 @@ Config Config::load(const std::string &path) {
   }
 
   {
+    const auto ptr_checkpointEveryStep = GetValueHelpers::getScalarValue<int>("checkpoint_every_step", *jsonValue);
+    if (ptr_checkpointEveryStep != nullptr) {
+      config.checkpointEveryStep = static_cast<int64_t>(*ptr_checkpointEveryStep);
+    }
+  }
+
+  {
     const auto ptr_nSamples = GetValueHelpers::getScalarValue<int>("num_samples", *jsonValue);
     if (ptr_nSamples != nullptr) {
       config.nSamples = static_cast<int64_t>(*ptr_nSamples);

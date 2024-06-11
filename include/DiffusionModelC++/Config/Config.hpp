@@ -166,10 +166,10 @@ enum class LRSchedulerType {
 struct ModelConfig {
   int64_t inChannels = 3LL;
   int64_t inFeatures = 256LL;
-  std::vector<int64_t> depth = {2, 2, 2, 4};
-  std::vector<int64_t> channels = {128, 256, 256, 512};
-  std::vector<bool> selfAttenDepth = {false, false, false, true};
-  std::vector<bool> crossAttenDepth = {false, false, false, false};
+  std::vector<int64_t> depth = {2, 2, 2, 4, 4};
+  std::vector<int64_t> channels = {128, 256, 256, 512, 512};
+  std::vector<bool> selfAttenDepth = {false, false, false, true, true};
+  std::vector<bool> crossAttenDepth = {false, false, false, false, false};
   int64_t mappingCondDim = 0;
   int64_t unetCondDim = 0;
   int64_t crossCondDim = 0;
@@ -215,7 +215,7 @@ struct EMAConfig {
 };
 
 struct SamplerConfig {
-  double sigmaData = 0.612;
+  double sigmaData = 0.5;
   double sigmaMin = 1e-2;
   double sigmaMax = 160.0;
   double noiseDLow = 32.0;
@@ -235,9 +235,11 @@ struct Config {
   int64_t seed = 1234;
   int64_t deviceID = 0;
   int64_t imageSize{};
+
   int64_t maxSteps = 100000;
   int64_t logEveryStep = 100;
   int64_t sampleEveryStep = 1000;
+  int64_t checkpointEveryStep = 5000;
 
   int64_t nSamples = 16;
 

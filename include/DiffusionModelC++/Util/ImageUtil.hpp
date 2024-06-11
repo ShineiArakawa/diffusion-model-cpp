@@ -2,6 +2,7 @@
 
 #include <torch/torch.h>
 
+#include <DiffusionModelC++/Util/FileUtil.hpp>
 #include <DiffusionModelC++/Util/Logging.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -21,46 +22,47 @@ inline cv::Mat loadImage(const std::string& filePath) {
 
 inline torch::Tensor cv2MatToTensor(const cv::Mat& image, bool normalize = true) {
   cv::Mat floatImage;
-  image.convertTo(floatImage, CV_32FC3, 1.0 / 255.0);
+  image.convertTo(floatImage, CV_32F, 1.0 / 255.0);
 
   // NOTE: BGR -> RGB
-  cv::cvtColor(floatImage, floatImage, cv::COLOR_BGR2RGB);
+  cv::Mat floatRGBImage;
+  cv::cvtColor(floatImage, floatRGBImage, cv::COLOR_BGR2RGB);
+
+  TORCH_CHECK(floatRGBImage.channels() == 3, "Input channel != 3");
+
+  at::Tensor tensorImage = torch::from_blob(floatRGBImage.data, {floatRGBImage.rows, floatRGBImage.cols, 3}, torch::kFloat32);
 
   // NOTE: HWC (Height, Width, Channels) -> CHW (Channels, Height, Width)
-  cv::Mat chw_image = floatImage.reshape(1, {floatImage.rows, floatImage.cols, 3});
-  torch::Tensor chw_image_tensor = torch::from_blob(chw_image.data, {3, floatImage.rows, floatImage.cols}, torch::kFloat);
-
-  chw_image_tensor = chw_image_tensor.clone();
+  tensorImage = tensorImage.permute({2, 0, 1});
 
   if (normalize) {
-    chw_image_tensor = 2.0 * chw_image_tensor - 1.0;
+    tensorImage = 2.0 * tensorImage - 1.0;
   }
 
-  return chw_image_tensor;
+  return tensorImage.clone();
 }
 
 inline cv::Mat tensorToCv2Mat(const torch::Tensor& tensor, bool denormalize = true) {
-  torch::Tensor tensor_cpu = tensor.to(torch::kCPU).contiguous();
-
-  const auto sizes = tensor_cpu.sizes();
-  const int height = sizes[1];
-  const int width = sizes[2];
-
-  float* tensor_data = tensor_cpu.data_ptr<float>();
-
-  cv::Mat mat(height, width, CV_32FC3, tensor_data);
-
-  cv::Mat mat_copy = mat.clone();
-
-  cv::cvtColor(mat_copy, mat_copy, cv::COLOR_RGB2BGR);
+  torch::Tensor tensor_cpu = tensor.to(torch::kCPU).permute({1, 2, 0}).contiguous();
 
   if (denormalize) {
-    mat_copy = (mat_copy + 1.0) / 2.0;
+    tensor_cpu = (tensor_cpu + 1.0) / 2.0;
   }
 
-  mat_copy.convertTo(mat_copy, CV_8UC3, 255.0);
+  const auto sizes = tensor_cpu.sizes();
+  const int height = sizes[0];
+  const int width = sizes[1];
+  const int channels = sizes[2];
 
-  return mat_copy;
+  TORCH_CHECK(channels == 3, "Input channel != 3");
+
+  cv::Mat mat(height, width, CV_32FC3, tensor_cpu.data_ptr<float>());
+  mat.convertTo(mat, CV_8UC3, 255.0);
+
+  cv::Mat matBgr;
+  cv::cvtColor(mat, matBgr, cv::COLOR_RGB2BGR);
+
+  return matBgr.clone();
 }
 
 inline void saveImage(const cv::Mat& image, const std::string& filePath) {
@@ -76,6 +78,43 @@ inline void saveImage(const cv::Mat& image, const std::string& filePath) {
     }
   } catch (const cv::Exception& ex) {
     LOG_ERROR("Exception converting image to format: " + std::string(ex.what()));
+  }
+}
+
+inline cv::Mat resize(const cv::Mat& image, const int width, const int height) {
+  cv::Size new_size(width, height);
+
+  cv::Mat dst;
+
+  cv::resize(image, dst, new_size, 0.0, 0.0, cv::INTER_LANCZOS4);
+
+  return dst;
+}
+
+inline cv::Mat horizontalFlip(const cv::Mat& image) {
+  cv::Mat dst;
+
+  cv::flip(image, dst, 1);
+
+  return dst;
+}
+
+inline cv::Mat verticalFlip(const cv::Mat& image) {
+  cv::Mat dst;
+
+  cv::flip(image, dst, 0);
+
+  return dst;
+}
+
+inline void DEBUG_saveImages(const torch::Tensor& images, const std::string& dirPath) {
+  util::FileUtil::mkdirs(dirPath);
+
+  for (int64_t iImage = 0; iImage < images.size(0); ++iImage) {
+    const std::string& filePath = util::FileUtil::join(dirPath, "sample_" + std::to_string(iImage) + ".png");
+
+    const cv::Mat& image = dmcpp::util::tensorToCv2Mat(images.index({iImage, torch::indexing::Slice(0, 3), torch::indexing::Slice(), torch::indexing::Slice()}));
+    util::saveImage(image, filePath);
   }
 }
 

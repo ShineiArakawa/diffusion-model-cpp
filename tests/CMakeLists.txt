@@ -5,3 +5,11 @@ add_subdirectory(
 add_subdirectory(
         "test_ImageIO"
 )
+
+add_subdirectory(
+        "test_Dataloading"
+)
+
+add_subdirectory(
+        "test_AttentionModule"
+)

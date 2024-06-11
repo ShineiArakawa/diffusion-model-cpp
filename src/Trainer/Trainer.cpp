@@ -61,7 +61,10 @@ Trainer::Trainer(const config::Config& config,
   _EMAScheduler = std::make_shared<EMAWarmup>(1.0, config.ema.power, 0.0, config.ema.maxValue);
 
   // Dataset
-  auto dataset = ImageFolderDataset(config.dataset.root, config.dataset.extension);
+  auto dataset = ImageFolderDataset(config.dataset.root,
+                                    config.imageSize,
+                                    config.imageSize,
+                                    config.dataset.extension);
   auto mappedDataset = dataset.map(torch::data::transforms::Stack<>());
 
   // DataLoader
@@ -100,6 +103,8 @@ void Trainer::fit() {
       _lrScheduler->step();
       _optimizer->zero_grad();
 
+      ++_step;
+
       // EMA update
       {
         torch::NoGradGuard no_grad;
@@ -108,13 +113,9 @@ void Trainer::fit() {
         updateEMAModel(_model, _modelEMA, emaDecay);
       }
 
-      ++_step;
-
-      if (_step == _config.maxSteps) {
-        break;
-      }
-
       if (_step % _config.logEveryStep == 0) {
+        torch::NoGradGuard no_grad;
+
         auto currentTime = std::chrono::high_resolution_clock::now();
         double elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(currentTime - startTime).count();
 
@@ -122,6 +123,7 @@ void Trainer::fit() {
       }
 
       if (_step % _config.sampleEveryStep == 0) {
+        torch::NoGradGuard no_grad;
         LOG_INFO("Sampling ...");
 
         const torch::Tensor& x = torch::randn({_config.nSamples, _config.model.inChannels, _config.imageSize, _config.imageSize}, torch::TensorOptions(_device)) * _config.sampler.sigmaMax;
@@ -136,9 +138,66 @@ void Trainer::fit() {
           const cv::Mat& image = util::tensorToCv2Mat(sampled[iImage]);
           util::saveImage(image, filePath);
         }
+
+        LOG_INFO("Done.");
+      }
+
+      if (_step % _config.checkpointEveryStep == 0) {
+        torch::NoGradGuard no_grad;
+        save();
+      }
+
+      if (_step == _config.maxSteps) {
+        break;
       }
     }
   }
+}
+
+void Trainer::save() {
+  torch::NoGradGuard no_grad;
+
+  LOG_INFO("Saving checkpoint ...");
+
+  torch::serialize::OutputArchive archive;
+
+  {
+    torch::serialize::OutputArchive tmpArchive;
+    _model->save(tmpArchive);
+    archive.write("model", tmpArchive);
+  }
+
+  {
+    torch::serialize::OutputArchive tmpArchive;
+    _modelEMA->save(tmpArchive);
+    archive.write("ema_model", tmpArchive);
+  }
+
+  {
+    torch::serialize::OutputArchive tmpArchive;
+    _optimizer->save(tmpArchive);
+    archive.write("optimizer", tmpArchive);
+  }
+
+  {
+    torch::serialize::OutputArchive tmpArchive;
+    const auto& stateDict = _EMAScheduler->state_dict();
+
+    for (auto iter = stateDict.begin(); iter != stateDict.end(); ++iter) {
+      tmpArchive.write(iter->first, iter->second);
+    }
+
+    archive.write("ema_sched", stateDict);
+  }
+
+  archive.write("step", _step);
+
+  const std::string filePath = util::FileUtil::join(util::FileUtil::join(_config.logDir, "checkpoints"), "checkpoint_step=" + std::to_string(_step) + ".pth");
+  util::FileUtil::mkdirs(util::FileUtil::dirPath(filePath));
+
+  archive.save_to(filePath);
+
+  LOG_INFO("Saving checkpoint to " + filePath);
 }
 
 }  // namespace dmcpp::trainer

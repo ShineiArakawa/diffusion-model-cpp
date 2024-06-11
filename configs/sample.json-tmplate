@@ -1,0 +1,39 @@
+{
+    "dataset": {
+        "root": "Path to your dataset directory",
+        "extension": ".jpg",
+        "num_workers": 32
+    },
+    "model": {
+        "depth": [
+            2,
+            2,
+            2,
+            4,
+            4
+        ],
+        "channels": [
+            256,
+            256,
+            256,
+            512,
+            512
+        ],
+        "self_atten_depth": [
+            false,
+            false,
+            false,
+            true,
+            true
+        ],
+        "cross_atten_depth": [
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    },
+    "image_size": 128,
+    "log_dir": "Path to your log directory"
+}

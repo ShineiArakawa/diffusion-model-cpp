@@ -7,7 +7,8 @@
 #include <memory>
 
 struct Arguments {
-  std::string config;
+  std::string config = "";
+  bool printModel = false;
 
   static Arguments parseArgs(int argc, char* argv[]) {
     Arguments args;
@@ -24,6 +25,8 @@ struct Arguments {
       if (arg == "-h") {
         toShowHelp = true;
         break;
+      } else if (arg == "--print-model") {
+        args.printModel = true;
       } else {
         args.config = std::string(arg);
       }
@@ -39,6 +42,9 @@ struct Arguments {
       std::cout << "[Options]                                                                                                        \n";
       std::cout << "  General                                                                                                        \n";
       std::cout << "    -h                                                                  Show this help message                   \n";
+      std::cout << "                                                                                                                 \n";
+      std::cout << "  Model                                                                                                          \n";
+      std::cout << "    --print-model                                                       Print model                              \n";
       exit(EXIT_SUCCESS);
     }
 
@@ -58,6 +64,10 @@ int main(int argc, char* argv[]) {
   // Diffusion model
   dmcpp::diffusion::KarrasDiffusion diffusion = dmcpp::getDiffusionModel(config);
   dmcpp::diffusion::KarrasDiffusion diffusionEMA = dmcpp::getDiffusionModel(config);
+
+  if (args.printModel) {
+    std::cout << diffusion << std::endl;
+  }
 
   // Trainer
   auto trainer = std::make_shared<dmcpp::trainer::Trainer>(config, diffusion, diffusionEMA);

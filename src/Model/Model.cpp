@@ -1,6 +1,12 @@
 #include <DiffusionModelC++/Model/Model.hpp>
 #include <algorithm>
 
+// #define DEBUG_DMCPP_MODEL
+
+#ifdef DEBUG_DMCPP_MODEL
+#include <DiffusionModelC++/Util/ImageUtil.hpp>
+#endif
+
 namespace dmcpp::model {
 // ====================================================================================================
 // ResConvBLock
@@ -411,6 +417,8 @@ ImageUNetModelForwardReturn ImageUNetModelImpl::forward(const torch::Tensor& inp
   const at::Tensor& mappedCond = _mapping->forward(cond);
 
   at::Tensor modelInput = input;
+  modelInput = modelInput.contiguous();
+
   ConditionContext condCtx;
   condCtx.condition = mappingCond;
 
@@ -423,21 +431,38 @@ ImageUNetModelForwardReturn ImageUNetModelImpl::forward(const torch::Tensor& inp
     condCtx.crossPadding = args.crossCondPadding;
   }
 
-  torch::Tensor modelOutput = _inProj->forward(modelInput);
-  modelOutput = _uNet->forward(modelOutput, condCtx);
-  modelOutput = _outProj->forward(modelOutput);
+#ifdef DEBUG_DMCPP_MODEL
+  std::cout << "modelInput.is_contiguous() : " << (modelInput.is_contiguous() ? "true" : "false") << std::endl;
+  std::cout << modelInput.sizes() << std::endl;
+  util::DEBUG_saveImages(modelInput, "/home/araka/Projects/diffusion-model-cpp/debug/model/0");
+#endif
+  modelInput = _inProj->forward(modelInput);
+#ifdef DEBUG_DMCPP_MODEL
+  std::cout << modelInput.sizes() << std::endl;
+  util::DEBUG_saveImages(modelInput, "/home/araka/Projects/diffusion-model-cpp/debug/model/1");
+#endif
+  modelInput = _uNet->forward(modelInput, condCtx);
+#ifdef DEBUG_DMCPP_MODEL
+  std::cout << modelInput.sizes() << std::endl;
+  util::DEBUG_saveImages(modelInput, "/home/araka/Projects/diffusion-model-cpp/debug/model/2");
+#endif
+  modelInput = _outProj->forward(modelInput);
+#ifdef DEBUG_DMCPP_MODEL
+  std::cout << modelInput.sizes() << std::endl;
+  util::DEBUG_saveImages(modelInput, "/home/araka/Projects/diffusion-model-cpp/debug/model/3");
+#endif
 
   ImageUNetModelForwardReturn returnVars;
 
   if (_hasVariance) {
-    const at::Tensor& output = modelOutput.index({torch::indexing::Slice(),
-                                                  torch::indexing::Slice(0, -1),
-                                                  torch::indexing::Slice(),
-                                                  torch::indexing::Slice()});
-    const at::Tensor& logVar = modelOutput.index({torch::indexing::Slice(),
-                                                  -1,
-                                                  torch::indexing::Slice(),
-                                                  torch::indexing::Slice()})
+    const at::Tensor& output = modelInput.index({torch::indexing::Slice(),
+                                                 torch::indexing::Slice(0, -1),
+                                                 torch::indexing::Slice(),
+                                                 torch::indexing::Slice()});
+    const at::Tensor& logVar = modelInput.index({torch::indexing::Slice(),
+                                                 -1,
+                                                 torch::indexing::Slice(),
+                                                 torch::indexing::Slice()})
                                    .flatten(1)
                                    .mean(1);
 
@@ -447,22 +472,22 @@ ImageUNetModelForwardReturn ImageUNetModelImpl::forward(const torch::Tensor& inp
       returnVars.logVar = logVar;
     }
   } else {
-    returnVars.output = modelOutput;
+    returnVars.output = modelInput;
   }
 
   return returnVars;
 }
 
 void ImageUNetModelImpl::reset() {
-  _timestepEmbed->reset();
-  _mapping->reset();
-  _inProj->reset();
-  _outProj->reset();
-  _uNet->reset();
+  // _timestepEmbed->reset();
+  // _mapping->reset();
+  // _inProj->reset();
+  // _outProj->reset();
+  // _uNet->reset();
 
-  if (!_mappingCond.is_empty()) {
-    _mappingCond->reset();
-  }
+  // if (!_mappingCond.is_empty()) {
+  //   _mappingCond->reset();
+  // }
 }
 
 }  // namespace dmcpp::model

@@ -20,6 +20,7 @@ class Trainer {
   ~Trainer();
 
   void fit();
+  void save();
 
  private:
   config::Config _config;
