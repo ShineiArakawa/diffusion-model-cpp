@@ -1,0 +1,6 @@
+[submodule "external/picojson"]
+	path = external/picojson
+	url = https://github.com/kazuho/picojson.git
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog.git
