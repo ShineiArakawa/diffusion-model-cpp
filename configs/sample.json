@@ -1,0 +1,8 @@
+{
+    "dataset": {
+        "root": "/home/data/DockerProjects/NvidiaPytorch/Datasets/CelebA/celeba128_train"
+    },
+    "image_size": 128,
+    "log_dir": "/home/shinaraka/Projects/diffusion-model-cpp/log",
+    "sample_every_step": 3
+}
