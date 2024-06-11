@@ -4,6 +4,7 @@
 #include <DiffusionModelC++/Util/ImageUtil.hpp>
 #include <DiffusionModelC++/Util/Logging.hpp>
 #include <chrono>
+#include <opencv2/opencv.hpp>
 #include <utility>
 
 namespace dmcpp::trainer {
