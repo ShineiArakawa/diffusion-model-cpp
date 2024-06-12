@@ -61,17 +61,17 @@ set(PICO_JSON_INCLUDE_DIR ${PROJECT_EXTERNAL_DIR}/picojson)
 # External libralies
 ############################################################################################################
 set(
-        EXTERNAL_INCLUDE_DIR
-        ${TORCH_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        ${SPD_LOG_INCLUDE_DIR}
-        ${PICO_JSON_INCLUDE_DIR}
+    EXTERNAL_INCLUDE_DIR
+    ${TORCH_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${SPD_LOG_INCLUDE_DIR}
+    ${PICO_JSON_INCLUDE_DIR}
 )
 
 set(
-        PROJECT_LIBS
-        ${TORCH_LIBRARIES}
-        ${OpenCV_LIBS}
+    PROJECT_LIBS
+    ${TORCH_LIBRARIES}
+    ${OpenCV_LIBS}
 )
 
 ############################################################################################################
@@ -99,7 +99,7 @@ message(STATUS "#    C   Compiler                         : ${CMAKE_C_COMPILER_I
 message(STATUS "#    C++ Compiler                         : ${CMAKE_CXX_COMPILER_ID} | ${CMAKE_CXX_COMPILER_VERSION} | ${CMAKE_CXX_COMPILER}")
 message(STATUS "#    CXX STANDARD                         : ${CMAKE_CXX_STANDARD}")
 message(STATUS "# ")
-message(STATUS "# [CUDA]")
+message(STATUS "#  [CUDA]")
 message(STATUS "#    CMAKE_CUDA_COMPILER                  : ${CMAKE_CUDA_COMPILER}")
 message(STATUS "#    CMAKE_CUDA_ARCHITECTURES             : ${CMAKE_CUDA_ARCHITECTURES}")
 message(STATUS "# ")
