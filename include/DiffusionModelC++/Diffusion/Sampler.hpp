@@ -23,7 +23,7 @@ inline torch::Tensor getSigmasKarras(int n,
                                      double sigma_max,
                                      double rho = 7.0,
                                      torch::Device device = torch::kCPU) {
-  torch::Tensor ramp = torch::linspace(0, 1, n, torch::TensorOptions().device(device));
+  torch::Tensor ramp = torch::linspace(0.0, 1.0, n, torch::TensorOptions().device(device));
 
   const double min_inv_rho = std::pow(sigma_min, 1.0 / rho);
   const double max_inv_rho = std::pow(sigma_max, 1.0 / rho);

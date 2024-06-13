@@ -118,7 +118,7 @@ torch::Tensor SelfAttention2DImpl::forward(torch::Tensor& x, dmcpp::model::Condi
 
   // std::cout << "    x.size()     = " << x.sizes() << std::endl;
 
-  torch::Tensor qkv = _qkvProj(_norm->forward(x, conditionCtx.condition));
+  torch::Tensor qkv = _qkvProj->forward(_norm->forward(x, conditionCtx.condition));
   qkv = qkv.view({b, _nHeads * 3LL, c / _nHeads, h * w}).transpose(2, 3);
   // std::cout << "    qkv.size()   = " << qkv.sizes() << std::endl;
 
@@ -223,7 +223,11 @@ Downsample2DImpl::Downsample2DImpl(torch::nn::functional::InterpolateFuncOptions
     : _interp(interp) {}
 
 torch::Tensor Downsample2DImpl::forward(torch::Tensor& x, ConditionContext& conditionCtx) {
-  return torch::nn::functional::interpolate(x, torch::nn::functional::InterpolateFuncOptions().mode(_interp).scale_factor(SCALE_FACTOR).align_corners(false).recompute_scale_factor(false));
+  return torch::nn::functional::interpolate(x, torch::nn::functional::InterpolateFuncOptions()
+                                                   .mode(_interp)
+                                                   .scale_factor(SCALE_FACTOR)
+                                                   .align_corners(true)
+                                                   .recompute_scale_factor(false));
 }
 
 void Downsample2DImpl::reset() {
@@ -237,7 +241,11 @@ Upsample2DImpl::Upsample2DImpl(torch::nn::functional::InterpolateFuncOptions::mo
     : _interp(interp) {}
 
 torch::Tensor Upsample2DImpl::forward(torch::Tensor& x, ConditionContext& conditionCtx) {
-  return torch::nn::functional::interpolate(x, torch::nn::functional::InterpolateFuncOptions().mode(_interp).scale_factor(SCALE_FACTOR).align_corners(false).recompute_scale_factor(false));
+  return torch::nn::functional::interpolate(x, torch::nn::functional::InterpolateFuncOptions()
+                                                   .mode(_interp)
+                                                   .scale_factor(SCALE_FACTOR)
+                                                   .align_corners(true)
+                                                   .recompute_scale_factor(false));
 }
 
 void Upsample2DImpl::reset() {

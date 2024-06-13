@@ -20,9 +20,11 @@ class Trainer {
   ~Trainer();
 
   void fit();
-  void save();
+  void save(const std::string& filePath);
 
  private:
+  std::string getCheckpointDirPath() const;
+
   config::Config _config;
   diffusion::KarrasDiffusion _model = nullptr;
   diffusion::KarrasDiffusion _modelEMA = nullptr;

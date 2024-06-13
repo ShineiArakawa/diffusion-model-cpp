@@ -1,3 +1,5 @@
+#include <omp.h>
+
 #include <DiffusionModelC++/Trainer/Dataloader.hpp>
 #include <DiffusionModelC++/Util/FileUtil.hpp>
 #include <DiffusionModelC++/Util/Logging.hpp>
@@ -29,7 +31,7 @@ ImageFolderDataset::ImageFolderDataset(const std::string& root,
     LOG_ERROR("General error: " + std::string(e.what()));
   }
 
-  const size_t nImages = _imagePaths.size();
+  const int64_t nImages = static_cast<int64_t>(_imagePaths.size());
 
   LOG_INFO("Found " + std::to_string(nImages) + " images in " + root);
 
@@ -38,15 +40,15 @@ ImageFolderDataset::ImageFolderDataset(const std::string& root,
 
   _images.resize(nImages);
 
-  for (size_t iImage = 0; iImage < nImages; ++iImage) {
-    if (iImage % 100 == 0) {
-      LOG_INFO("Loaded " + std::to_string(iImage) + " images");
-    }
-
+// Parallelize the image loading process using OpenMP
+#pragma omp parallel for
+  for (int64_t iImage = 0; iImage < nImages; ++iImage) {
     cv::Mat image = util::loadImage(_imagePaths[iImage]);
     image = util::resize(image, _imageWidth, _imageHeight);
     _images[iImage] = image;
   }
+
+  LOG_INFO("Done.");
 }
 
 torch::data::Example<torch::Tensor> ImageFolderDataset::get(size_t index) {

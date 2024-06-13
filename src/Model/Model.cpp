@@ -149,7 +149,7 @@ DownBlockImpl::DownBlockImpl(int64_t nLayers,
 
     if (crossAttention) {
       AdaGN normModule(inFeatures, tmpOutChannels, nGroupsValid);
-      push_buck("selfAttention" + std::to_string(iLayer),
+      push_buck("crossAttention" + std::to_string(iLayer),
                 std::make_shared<CrossAttention2DImpl>(tmpOutChannels, encChannels, nHeads, normModule, dropoutRate));
     }
   }
@@ -203,7 +203,7 @@ UpBlockImpl::UpBlockImpl(int64_t nLayers,
 
     if (crossAttention) {
       AdaGN normModule(inFeatures, tmpOutChannels, nGroupsValid);
-      push_buck("selfAttention" + std::to_string(iLayer),
+      push_buck("crossAttention" + std::to_string(iLayer),
                 std::make_shared<CrossAttention2DImpl>(tmpOutChannels, encChannels, nHeads, normModule, dropoutRate));
     }
   }
@@ -420,7 +420,7 @@ ImageUNetModelForwardReturn ImageUNetModelImpl::forward(const torch::Tensor& inp
   modelInput = modelInput.contiguous();
 
   ConditionContext condCtx;
-  condCtx.condition = mappingCond;
+  condCtx.condition = mappedCond;
 
   if (args.unetCond.defined()) {
     modelInput = torch::cat({modelInput, args.unetCond}, 1);

@@ -85,9 +85,10 @@ Trainer::~Trainer() = default;
 void Trainer::fit() {
   LOG_INFO("Start training ...");
 
+  bool toContinue = true;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  while (true) {
+  while (toContinue) {
     for (auto& batch : *_dataLoader) {
       const torch::Tensor& image = batch.data.to(_device);
       const torch::Tensor& noise = torch::randn_like(image);
@@ -145,17 +146,25 @@ void Trainer::fit() {
 
       if (_step % _config.checkpointEveryStep == 0) {
         torch::NoGradGuard no_grad;
-        save();
+
+        const std::string filePath = util::FileUtil::join(getCheckpointDirPath(), "checkpoint_step=" + std::to_string(_step) + ".pth");
+        save(filePath);
       }
 
       if (_step == _config.maxSteps) {
+        toContinue = false;
         break;
       }
     }
   }
+
+  LOG_INFO("Done.");
+
+  const std::string filePath = util::FileUtil::join(getCheckpointDirPath(), "checkpoint_last.pth");
+  save(filePath);
 }
 
-void Trainer::save() {
+void Trainer::save(const std::string& filePath) {
   torch::NoGradGuard no_grad;
 
   LOG_INFO("Saving checkpoint ...");
@@ -193,12 +202,15 @@ void Trainer::save() {
 
   archive.write("step", _step);
 
-  const std::string filePath = util::FileUtil::join(util::FileUtil::join(_config.logDir, "checkpoints"), "checkpoint_step=" + std::to_string(_step) + ".pth");
   util::FileUtil::mkdirs(util::FileUtil::dirPath(filePath));
 
   archive.save_to(filePath);
 
   LOG_INFO("Saving checkpoint to " + filePath);
+}
+
+std::string Trainer::getCheckpointDirPath() const {
+  return util::FileUtil::join(_config.logDir, "checkpoints");
 }
 
 }  // namespace dmcpp::trainer

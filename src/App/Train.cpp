@@ -74,5 +74,7 @@ int main(int argc, char* argv[]) {
 
   trainer->fit();
 
+  LOG_INFO("Bye.");
+
   return 0;
 }
