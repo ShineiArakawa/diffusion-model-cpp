@@ -1,6 +1,6 @@
-# diffusion-model-cpp
+# diffusion-model-cpp<br><sub>A C++ implementation of a diffusion model using libtorch</sub>
 
-A C++ implementation of a diffusion model using libtorch.
+![Teaser image](./assets/sampled_images.png)
 
 ## Features
 - Diffusion model implemented using libtorch
